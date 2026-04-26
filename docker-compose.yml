@@ -1,0 +1,54 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: zentao-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: zentao
+      MYSQL_USER: zentao
+      MYSQL_PASSWORD: zentao
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./db/install.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./db/chat.sql:/docker-entrypoint-initdb.d/02-chat.sql
+      - ./db/jenkins.sql:/docker-entrypoint-initdb.d/03-jenkins.sql
+    ports:
+      - "3306:3306"
+    restart: always
+    networks:
+      - zentao-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  zentao-web:
+    image: easysoft/zentao:latest
+    container_name: zentao-web
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USER=zentao
+      - MYSQL_PASSWORD=zentao
+      - MYSQL_DATABASE=zentao
+    volumes:
+      - ./:/app
+      - zentao-data:/data/zentao
+    ports:
+      - "8080:80"
+    restart: always
+    networks:
+      - zentao-network
+
+networks:
+  zentao-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  zentao-data:

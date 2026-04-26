@@ -1,0 +1,66 @@
+{
+  "date": "2026-04-25T11:45:10.231Z",
+  "summary": {
+    "total": 11,
+    "passed": 11,
+    "failed": 0,
+    "rate": "100%"
+  },
+  "results": [
+    {
+      "name": "用户登录",
+      "status": "PASS",
+      "message": "登录成功"
+    },
+    {
+      "name": "API - createRoom()",
+      "status": "PASS",
+      "message": "roomID: 15"
+    },
+    {
+      "name": "API - getRoom()",
+      "status": "PASS",
+      "message": "{\"id\":1,\"name\":\"TestRoom\",\"type\":\"private\",\"relatedID\":0,\"createdBy\":\"admin\",\"createdDate\":\"2026-04-25 18:47:33\",\"result\":\"success\",\"message\":\"保存成功\"}"
+    },
+    {
+      "name": "API - getMembers()",
+      "status": "PASS",
+      "message": "成员数: 0"
+    },
+    {
+      "name": "API - sendMessage()",
+      "status": "PASS",
+      "message": "{\"id\":15,\"roomID\":15,\"sender\":\"admin\",\"content\":\"Test message\",\"type\":\"text\",\"extra\":\"\",\"createdDate\":\"2026-04-25 19:45:07\",\"senderName\":\"admin\",\"result\":\"success\",\"message\":\"保存成功\"}"
+    },
+    {
+      "name": "API - getMessages()",
+      "status": "PASS",
+      "message": "消息数: 0"
+    },
+    {
+      "name": "API - removeMember()",
+      "status": "PASS",
+      "message": "{\"roomID\":15,\"account\":\"admin\",\"result\":\"success\",\"message\":\"保存成功\"}"
+    },
+    {
+      "name": "API - addMember()",
+      "status": "PASS",
+      "message": "{\"roomID\":15,\"account\":\"admin\",\"result\":\"success\",\"message\":\"保存成功\"}"
+    },
+    {
+      "name": "UI - 查找 chatBar",
+      "status": "PASS",
+      "message": "在 iframe 中找到"
+    },
+    {
+      "name": "UI - 打开聊天窗口",
+      "status": "PASS",
+      "message": "窗口已弹出"
+    },
+    {
+      "name": "UI - 关闭聊天窗口",
+      "status": "PASS",
+      "message": "窗口已关闭"
+    }
+  ]
+}
