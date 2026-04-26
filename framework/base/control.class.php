@@ -225,6 +225,7 @@ class baseControl
         if($this->config->installed && !in_array($this->moduleName, $this->config->openModules) && empty($this->app->user) && !$this->loadModel('common')->isOpenMethod($this->moduleName, $this->methodName))
         {
             $uri = $this->app->getURI(true);
+            error_log("DEBUG login timeout check: moduleName={$this->moduleName}, methodName={$this->methodName}, openModules=" . json_encode($this->config->openModules) . ", isOpenMethod=" . ($this->loadModel('common')->isOpenMethod($this->moduleName, $this->methodName) ? 'true' : 'false') . ", app->user empty=" . (empty($this->app->user) ? 'true' : 'false'));
             if($this->moduleName == 'message' and $this->methodName == 'ajaxgetmessage')
             {
                 $uri = helper::createLink('my');

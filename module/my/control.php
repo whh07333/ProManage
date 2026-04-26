@@ -32,6 +32,14 @@ class my extends control
      */
     public function index()
     {
+        /* 产品经理、测试、开发跳转到开发者工作台。*/
+        /* Redirect po/qa/dev to developer workspace. */
+        $devwsRoles = array('po', 'qa', 'dev');
+        if(in_array($this->app->user->role, $devwsRoles))
+        {
+            $this->locate($this->createLink('devws', 'index'));
+        }
+
         $this->view->title = $this->lang->my->common;
         echo $this->fetch('block', 'dashboard', 'dashboard=my');
     }

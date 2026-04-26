@@ -738,6 +738,7 @@ class user extends control
         /* 处理登录逻辑。*/
         /* Process login. */
         $result = $this->userZen->login($this->referer, $viewType, $loginLink, $denyLink, $locateReferer, $locateWebRoot);
+        error_log("DEBUG CONTROL: result=" . json_encode($result));
         if($result)
         {
             /* Clean output buffer. Remove error message. Ensure that JSON can be parsed. */

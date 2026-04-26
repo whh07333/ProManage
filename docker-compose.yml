@@ -39,6 +39,7 @@ services:
     volumes:
       - ./:/app
       - zentao-data:/data/zentao
+      - session-data:/data/php/session
     ports:
       - "8080:80"
     restart: always
@@ -52,3 +53,4 @@ networks:
 volumes:
   mysql-data:
   zentao-data:
+  session-data:

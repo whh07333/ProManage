@@ -200,6 +200,12 @@ class userZen extends user
         /* Return user data in json format. */
         if($viewType == 'json') return array('status' => 'success', 'token' => session_id(), 'user' => $this->getUserForJSON($user));
 
+        /* 非admin用户跳转到开发者工作台。*/
+        /* Redirect non-admin users to developer workspace. */
+        $devwsLocation = $this->getDevwsLocation($user);
+        error_log("DEBUG DEVWS: user={$user->account}, role={$user->role}, devwsLocation=" . ($devwsLocation ?: 'false'));
+        if($devwsLocation) return array('result' => 'success', 'locate' => $devwsLocation);
+
         /* 来源网址不满足条件时跳转到首页。*/
         /* Jump to home page if the referer does not meet the conditions. */
         if(!$referer || strpos($referer, $loginLink) !== false || strpos($referer, $denyLink) !== false || strpos($referer, 'ajax') !== false || strpos($referer, 'block') !== false) return array('result' => 'success', 'locate' => $locateWebRoot);
@@ -219,6 +225,31 @@ class userZen extends user
         /* 跳转到首页。*/
         /* Jump to home page. */
         return array('result' => 'success', 'locate' => $locateWebRoot);
+    }
+
+    /**
+     * 获取非admin用户的开发者工作台跳转地址。
+     * Get the developer workspace location for non-admin users.
+     *
+     * @param  object $user
+     * @access public
+     * @return string|false
+     */
+    public function getDevwsLocation($user)
+    {
+        if(!$user) return false;
+
+        /* admin用户不跳转。*/
+        /* Admin users don't redirect. */
+        if($user->account == 'admin' || $user->role == 'admin') return false;
+
+        /* 检查用户是否有devws权限。*/
+        /* Check if user has devws privilege. */
+        if(!common::hasPriv('devws', 'index')) return false;
+
+        /* 返回devws地址。*/
+        /* Return devws location. */
+        return helper::createLink('devws', 'index');
     }
 
     /**

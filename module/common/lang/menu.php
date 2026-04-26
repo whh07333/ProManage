@@ -658,6 +658,7 @@ $lang->navGroup->score            = 'my';
 $lang->navGroup->todo             = 'my';
 $lang->navGroup->contact          = 'my';
 $lang->navGroup->personalsettings = 'my';
+$lang->navGroup->devws            = 'my';
 
 $lang->navGroup->program            = 'program';
 $lang->navGroup->personnel          = 'program';
