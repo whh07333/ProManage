@@ -1,1 +1,12 @@
 node_modules
+test-*.js
+test-*.php
+test-*.sh
+debug-*.js
+check_files.php
+phpinfo.php
+www.test.php
+www/test-error-log.php
+tmp/
+*.log
+.DS_Store
