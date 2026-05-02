@@ -71,9 +71,15 @@ body.hide-menu {--zt-menu-width: var(--zt-menu-fold-width)!important;}
 
 #apps {position: fixed; left: var(--zt-menu-width); top: 0; bottom: var(--zt-apps-bar-height); right: 0; background-color: var(--zt-page-bg); transition: left .1s;}
 .hide-menu #apps {left: var(--zt-menu-fold-width)!important;}
+/* devws: 完全隐藏菜单时，apps全屏显示 */
+#menu[style*="display: none"] ~ #apps,
+#menu[style*="display:none"] ~ #apps {left: 0 !important;}
 
 #appsBar {display: flex; flex-wrap: nowrap; align-items: center; position: fixed; left: var(--zt-menu-width); bottom: 0; right: 0; height: var(--zt-apps-bar-height); padding: 0 4px; background: var(--zt-apps-bar-bg); box-shadow: 0 -2px 12px rgba(0,0,0,.02); transition: left .1s; border-top-width: 1px;}
 .hide-menu #appsBar {left: var(--zt-menu-fold-width)!important;}
+/* devws: 完全隐藏菜单时，appsBar全屏显示 */
+#menu[style*="display: none"] ~ #appsBar,
+#menu[style*="display:none"] ~ #appsBar {left: 0 !important;}
 #appTabs {flex: auto; user-select: none; --nav-active-color: currentColor}
 #appTabs > li > a {border-radius: var(--radius-md); opacity: .6;}
 #appTabs > li + li::before {display: block; content: ' '; position: absolute; left: 0; top: 8px; bottom: 8px; width: 1px; background: var(--color-inverse); opacity: .12;}

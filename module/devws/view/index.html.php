@@ -175,7 +175,7 @@
             </div>
             
             <div class="sidebar-footer">
-                <a href="<?php echo helper::createLink('user', 'logout');?>">🚪 <?php echo $lang->user->logout;?></a>
+                <a href="<?php echo helper::createLink('user', 'logout');?>">🚪 <?php echo $lang->logout;?></a>
             </div>
         </div>
         

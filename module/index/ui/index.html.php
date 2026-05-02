@@ -2,10 +2,26 @@
 namespace zin;
 
 $this->app->loadConfig('message');
+
+/* 产品经理、测试、开发强制隐藏菜单 */
+$devwsRoles = array('po', 'qa', 'dev');
+$forceHideMenu = in_array($this->app->user->role, $devwsRoles);
+
+$hideMenuCSS = '';
+if($forceHideMenu)
+{
+    $hideMenuCSS = "
+    #menu { display: none !important; }
+    body.hide-menu #apps { left: 0 !important; bottom: 0 !important; }
+    body.hide-menu #appsBar { display: none !important; }
+    ";
+}
+
 h::css("
 #versionTitle {background-image: url('{$config->webRoot}theme/default/images/main/version-upgrade.svg');}
 .icon-version {width: 20px; height: 24px; margin: -4px 3px 0px 0px; background-image: url('{$config->webRoot}theme/default/images/main/version-new.svg');}
 .icon-version:before {content:'';}
+$hideMenuCSS
 ");
 
 $upgradeBtn = null;
@@ -126,7 +142,10 @@ jsVar('runnable',    $this->loadModel('cron')->runnable());
 jsVar('showFeatures', $showFeatures);
 
 set::zui(true);
-set::bodyClass($this->cookie->hideMenu ? 'hide-menu' : 'show-menu');
+/* 产品经理、测试、开发强制隐藏菜单 */
+$devwsRoles = array('po', 'qa', 'dev');
+$forceHideMenu = in_array($this->app->user->role, $devwsRoles);
+set::bodyClass(($this->cookie->hideMenu || $forceHideMenu) ? 'hide-menu' : 'show-menu');
 
 h::jsVar('window.appsItems', $appsItems, setID('appsItemsData'));
 h::jsVar('window.searchItems', $searchItems, setID('searchItemsData'));

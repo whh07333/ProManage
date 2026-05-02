@@ -37,6 +37,8 @@ class my extends control
         $devwsRoles = array('po', 'qa', 'dev');
         if(in_array($this->app->user->role, $devwsRoles))
         {
+            /* 设置cookie隐藏ZIN UI的左侧菜单 */
+            setcookie('hideMenu', '1', 0, $this->config->webRoot);
             $this->locate($this->createLink('devws', 'index'));
         }
 
