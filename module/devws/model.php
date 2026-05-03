@@ -149,4 +149,119 @@ class devwsModel extends model
 
         return array_slice($uniqueDocs, 0, 20);
     }
+
+    /**
+     * Get task by ID with related info.
+     *
+     * @param  int    $taskID
+     * @access public
+     * @return object|null
+     */
+    public function getTaskById($taskID)
+    {
+        $task = $this->dao->select('*')->from(TABLE_TASK)->where('id')->eq($taskID)->fetch();
+        if(!$task) return null;
+
+        /* Related names. */
+        $task->projectName    = '';
+        $task->executionName  = '';
+        $task->storyTitle     = '';
+        $task->storyCategory  = '';
+        $task->moduleName     = '';
+        $task->openedByName   = $task->openedBy;
+        $task->finishedByName = $task->finishedBy;
+        $task->assignedToName = $task->assignedTo;
+
+        if($task->project)   $project   = $this->dao->select('name')->from(TABLE_PROJECT)->where('id')->eq($task->project)->fetch();
+        if($task->execution) $execution = $this->dao->select('name, begin, end')->from(TABLE_EXECUTION)->where('id')->eq($task->execution)->fetch();
+        if($task->story)     $story     = $this->dao->select('id, title, category')->from(TABLE_STORY)->where('id')->eq($task->story)->fetch();
+        if($task->module)    $module    = $this->dao->select('id, name')->from(TABLE_MODULE)->where('id')->eq($task->module)->fetch();
+
+        if(!empty($project))   $task->projectName   = $project->name;
+        if(!empty($execution))
+        {
+            $task->executionName = $execution->name;
+            $task->executionBegin = $execution->begin;
+            $task->executionEnd   = $execution->end;
+        }
+        if(!empty($story))
+        {
+            $task->storyTitle    = $story->title;
+            $task->storyCategory = $story->category;
+        }
+        if(!empty($module)) $task->moduleName = $module->name;
+
+        $openedByUser   = $this->dao->select('realname')->from(TABLE_USER)->where('account')->eq($task->openedBy)->fetch();
+        $assignedToUser = $this->dao->select('realname')->from(TABLE_USER)->where('account')->eq($task->assignedTo)->fetch();
+        if($task->finishedBy) $finishedByUser = $this->dao->select('realname')->from(TABLE_USER)->where('account')->eq($task->finishedBy)->fetch();
+
+        if(!empty($openedByUser))     $task->openedByName   = $openedByUser->realname;
+        if(!empty($assignedToUser))   $task->assignedToName = $assignedToUser->realname;
+        if(!empty($finishedByUser))   $task->finishedByName = $finishedByUser->realname;
+
+        /* Subtasks (children tasks). */
+        $task->subtasks = $this->dao->select('id, name, status, pri, assignedTo, estimate, consumed, `left`, deadline')
+            ->from(TABLE_TASK)->where('parent')->eq($taskID)
+            ->andWhere('deleted')->eq(0)
+            ->orderBy('id asc')
+            ->fetchAll();
+
+        /* Related bugs. */
+        $task->bugs = $this->dao->select('id, title, status, severity, pri, openedBy, assignedTo, resolvedBy, resolvedDate')
+            ->from(TABLE_BUG)->where('task')->eq($taskID)
+            ->andWhere('deleted')->eq(0)
+            ->orderBy('id desc')
+            ->fetchAll();
+
+        /* Action history. */
+        $task->actions = $this->dao->select('*')->from(TABLE_ACTION)
+            ->where('objectType')->eq('task')
+            ->andWhere('objectID')->eq($taskID)
+            ->orderBy('date desc')
+            ->limit(30)
+            ->fetchAll();
+
+        return $task;
+    }
+
+    /**
+     * Get project by ID.
+     *
+     * @param  int    $projectID
+     * @access public
+     * @return object|null
+     */
+    public function getProjectById($projectID)
+    {
+        $project = $this->dao->select('*')->from(TABLE_PROJECT)->where('id')->eq($projectID)->fetch();
+        if(!$project) return null;
+
+        $project->pmName = '';
+        $project->poName = '';
+        $project->qdName = '';
+        $project->rdName = '';
+
+        if($project->PM)
+        {
+            $pmUser = $this->dao->select('realname')->from(TABLE_USER)->where('account')->eq($project->PM)->fetch();
+            $project->pmName = $pmUser ? $pmUser->realname : $project->PM;
+        }
+        if($project->PO)
+        {
+            $poUser = $this->dao->select('realname')->from(TABLE_USER)->where('account')->eq($project->PO)->fetch();
+            $project->poName = $poUser ? $poUser->realname : $project->PO;
+        }
+        if($project->QD)
+        {
+            $qdUser = $this->dao->select('realname')->from(TABLE_USER)->where('account')->eq($project->QD)->fetch();
+            $project->qdName = $qdUser ? $qdUser->realname : $project->QD;
+        }
+        if($project->RD)
+        {
+            $rdUser = $this->dao->select('realname')->from(TABLE_USER)->where('account')->eq($project->RD)->fetch();
+            $project->rdName = $rdUser ? $rdUser->realname : $project->RD;
+        }
+
+        return $project;
+    }
 }

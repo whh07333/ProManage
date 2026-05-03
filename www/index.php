@@ -55,6 +55,9 @@ $handler = static function ()
     {
         $app->parseRequest();
         $app->setParams();
+
+        file_put_contents('/tmp/zentao_request.log', date('Y-m-d H:i:s')." module={$app->getModuleName()} method={$app->getMethodName()} sec-fetch-dest=".($_SERVER['HTTP_SEC_FETCH_DEST']??'NOTSET')."\n", FILE_APPEND);
+
         $common->checkMaintenance();
         $common->checkPriv();
         $common->checkIframe();

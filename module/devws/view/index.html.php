@@ -114,6 +114,36 @@
         #header, #mainmenu, #modulemenu, .outer > .navbar, .navbar-fixed-top { display: none !important; }
         .outer { padding: 0 !important; }
         .container { max-width: 100% !important; padding: 0 !important; }
+
+        /* 右侧抽屉面板 */
+        .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.3s; }
+        .drawer-overlay.active { opacity: 1; visibility: visible; }
+
+        .drawer-panel { position: fixed; top: 0; right: -60%; width: 60%; height: 100vh; background: #fff; z-index: 1001; box-shadow: -4px 0 16px rgba(0,0,0,0.12); transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
+        .drawer-panel.active { right: 0; }
+
+        .drawer-header { height: 48px; border-bottom: 1px solid #e8e8e8; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; flex-shrink: 0; background: #fafafa; }
+        .drawer-title { font-size: 14px; font-weight: 500; color: #333; display: flex; align-items: center; gap: 8px; }
+        .drawer-close { width: 32px; height: 32px; border: none; background: none; font-size: 18px; cursor: pointer; color: #999; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .drawer-close:hover { background: #f0f0f0; color: #333; }
+        .drawer-back { width: 32px; height: 32px; border: none; background: none; font-size: 18px; cursor: pointer; color: #666; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; margin-right: 4px; }
+        .drawer-back:hover { background: #e8e8e8; color: #333; }
+
+        .drawer-body { flex: 1; overflow: hidden; background: #f5f7fa; position: relative; }
+        .drawer-body iframe { width: 100%; height: 100%; border: none; display: block; }
+
+        /* 内容区iframe */
+        .content-frame { width: 100%; height: 100%; border: none; display: block; }
+
+        /* 新建文档容器 */
+        #createdoc-content { display: none; position: relative; height: calc(100vh - 160px); min-height: 500px; }
+        #createdoc-content .content-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #project-view-content { display: none; position: relative; height: calc(100vh - 160px); min-height: 500px; }
+        #project-view-content .content-frame { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        /* 任务列表项点击样式 */
+        .list-item .title { cursor: pointer; }
+        .list-item .title:hover { color: #1890ff; }
     </style>
 </head>
 <body>
@@ -183,11 +213,17 @@
         <div class="main-content">
             <div class="header">
                 <div class="header-title" id="pageTitle"><?php echo $lang->devws->myWork;?></div>
-                <div class="header-actions">
+                <div class="header-actions" id="headerActions">
                     <button class="btn" onclick="location.reload();">刷新</button>
                     <?php if(common::hasPriv('task', 'create')):?>
-                    <button class="btn btn-primary" onclick="location.href='<?php echo helper::createLink('task', 'create');?>'">+ <?php echo $lang->task->create;?></button>
+                    <button class="btn btn-primary" onclick="openCreateDrawer()">+ <?php echo $lang->task->create;?></button>
                     <?php endif;?>
+                </div>
+                <div class="header-actions" id="headerActionsDoc" style="display:none;">
+                    <button class="btn" onclick="cancelCreateDoc()">← 返回文档列表</button>
+                </div>
+                <div class="header-actions" id="headerActionsProject" style="display:none;">
+                    <button class="btn" onclick="cancelProjectView()">← 返回项目列表</button>
                 </div>
             </div>
             
@@ -215,7 +251,7 @@
                                 <?php foreach($tasks as $task): ?>
                                 <div class="list-item">
                                     <span class="priority p<?php echo $task->pri;?>"><?php echo $task->pri;?></span>
-                                    <a href="<?php echo helper::createLink('task', 'view', "taskID=$task->id");?>" class="title"><?php echo $task->name;?></a>
+                                    <span class="title" onclick="openDrawer('task', <?php echo $task->id;?>)"><?php echo $task->name;?></span>
                                     <span class="status <?php echo $task->status == 'doing' ? 'doing' : ($task->status == 'done' ? 'done' : 'wait');?>"><?php echo zget($lang->task->statusList, $task->status);?></span>
                                 </div>
                                 <?php endforeach;?>
@@ -291,7 +327,7 @@
                                 <?php echo $lang->devws->myDocs;?> (<?php echo count($docs);?>)
                             </div>
                             <?php if(common::hasPriv('doc', 'create')):?>
-                            <button class="btn btn-primary" onclick="location.href='<?php echo helper::createLink('doc', 'create');?>'" style="padding: 4px 12px; font-size: 13px;">+ <?php echo $lang->devws->createDoc;?></button>
+                            <button class="btn btn-primary" onclick="openCreateDoc()" style="padding: 4px 12px; font-size: 13px;">+ <?php echo $lang->devws->createDoc;?></button>
                             <?php endif;?>
                         </div>
                         <div class="panel-body">
@@ -333,7 +369,7 @@
                             <?php else: ?>
                             <div class="project-grid">
                                 <?php foreach($projects as $project): ?>
-                                <a href="<?php echo helper::createLink('project', 'index', "projectID=$project->id");?>" class="project-card">
+                                <a href="javascript:;" onclick="openProjectView(<?php echo $project->id;?>)" class="project-card">
                                     <div class="name"><?php echo $project->name;?></div>
                                     <div class="meta"><?php echo zget($lang->project->statusList, $project->status);?> · <?php echo $project->team ? $project->team . '人参与' : '';?></div>
                                     <?php if(!empty($project->hours) && $project->hours->totalEstimate > 0): ?>
@@ -349,40 +385,233 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- 新建文档内容（iframe） -->
+                <div id="createdoc-content" class="content-section">
+                    <iframe id="createDocIframe" class="content-frame"></iframe>
+                </div>
+
+                <!-- 项目详情内容（iframe） -->
+                <div id="project-view-content" class="content-section">
+                    <iframe id="projectViewIframe" class="content-frame"></iframe>
+                </div>
             </div>
         </div>
     </div>
     
+    <!-- 右侧抽屉面板 -->
+    <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()"></div>
+    <div id="drawerPanel" class="drawer-panel">
+        <div class="drawer-header">
+            <div class="drawer-title">
+                <button id="drawerBackBtn" class="drawer-back" onclick="reloadDrawer()" style="display:none">←</button>
+                <span id="drawerTitleText"><?php echo $lang->task->common;?></span>
+            </div>
+            <button class="drawer-close" onclick="closeDrawer()">✕</button>
+        </div>
+        <div class="drawer-body">
+            <iframe id="drawerIframe" frameborder="0"></iframe>
+        </div>
+    </div>
+
     <script>
     document.addEventListener('DOMContentLoaded', function()
     {
         var menuItems = document.querySelectorAll('.menu-item[data-type]');
         var contentSections = document.querySelectorAll('.content-section');
         var pageTitle = document.getElementById('pageTitle');
-        
+
         var titles = {
             'work': '<?php echo $lang->devws->myWork;?>',
             'doc': '<?php echo $lang->devws->myDocs;?>',
             'project': '<?php echo $lang->devws->myProjects;?>'
         };
-        
+
         menuItems.forEach(function(item) {
             item.addEventListener('click', function() {
                 var type = this.getAttribute('data-type');
-                
+
+                /* If in createDoc mode, clear the iframe. */
+                var docIframe = document.getElementById('createDocIframe');
+                if(docIframe) docIframe.src = '';
+
                 menuItems.forEach(function(mi) {
                     mi.classList.remove('active');
                 });
                 this.classList.add('active');
-                
+
                 contentSections.forEach(function(section) {
                     section.style.display = 'none';
                 });
                 document.getElementById(type + '-content').style.display = 'block';
-                
+
                 pageTitle.textContent = titles[type];
+                document.getElementById('headerActions').style.display = '';
+                document.getElementById('headerActionsDoc').style.display = 'none';
             });
         });
+
+        /* 页面加载后切换到指定分区（如从创建文档返回） */
+        var savedSection = sessionStorage.getItem('devws_section');
+        if(savedSection) {
+            sessionStorage.removeItem('devws_section');
+            var targetMenuItem = document.querySelector('.menu-item[data-type="' + savedSection + '"]');
+            if(targetMenuItem) targetMenuItem.click();
+        }
+    });
+
+    /* 抽屉面板控制 */
+    var drawerOverlay = document.getElementById('drawerOverlay');
+    var drawerPanel   = document.getElementById('drawerPanel');
+    var drawerIframe  = document.getElementById('drawerIframe');
+    var drawerTitle   = document.getElementById('drawerTitleText');
+    var drawerBack    = document.getElementById('drawerBackBtn');
+    var currentTaskId = 0;
+
+    function openDrawer(type, id)
+    {
+        var label = type === 'task' ? '<?php echo $lang->task->common;?>' : '';
+        drawerTitle.textContent = label + ' #' + id;
+        currentTaskId = id;
+        drawerBack.style.display = 'none';
+        drawerIframe.src = '<?php echo helper::createLink('devws', 'task', "taskID=%s");?>'.replace('%s', id);
+
+        drawerOverlay.classList.add('active');
+        drawerPanel.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function openCreateDrawer()
+    {
+        drawerTitle.textContent = '<?php echo $lang->task->create;?>';
+        currentTaskId = 0;
+        drawerBack.style.display = 'none';
+        drawerIframe.src = '<?php echo helper::createLink('devws', 'create');?>';
+
+        drawerOverlay.classList.add('active');
+        drawerPanel.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function reloadDrawer()
+    {
+        if(currentTaskId)
+        {
+            drawerBack.style.display = 'none';
+            drawerIframe.src = '<?php echo helper::createLink('devws', 'task', "taskID=%s");?>'.replace('%s', currentTaskId);
+        }
+    }
+
+    function closeDrawer()
+    {
+        drawerOverlay.classList.remove('active');
+        drawerPanel.classList.remove('active');
+        document.body.style.overflow = '';
+        currentTaskId = 0;
+        setTimeout(function() { drawerIframe.src = ''; }, 300);
+    }
+
+    /* 新建文档页面控制（在主内容区显示，非抽屉） */
+    function openCreateDoc()
+    {
+        var iframe = document.getElementById('createDocIframe');
+        iframe.src = '<?php echo helper::createLink('devws', 'createDoc');?>';
+
+        /* Hide all sections, show the create doc iframe section. */
+        var sections = document.querySelectorAll('.content-section');
+        sections.forEach(function(s) { s.style.display = 'none'; });
+        document.getElementById('createdoc-content').style.display = 'block';
+
+        /* Update header. */
+        document.getElementById('headerActions').style.display = 'none';
+        document.getElementById('headerActionsDoc').style.display = '';
+        document.getElementById('pageTitle').textContent = '<?php echo $lang->devws->createDoc;?>';
+
+        /* Remove menu active state. */
+        document.querySelectorAll('.menu-item[data-type]').forEach(function(mi) {
+            mi.classList.remove('active');
+        });
+    }
+
+    function cancelCreateDoc()
+    {
+        var iframe = document.getElementById('createDocIframe');
+        iframe.src = '';
+
+        /* Show doc section. */
+        var sections = document.querySelectorAll('.content-section');
+        sections.forEach(function(s) { s.style.display = 'none'; });
+        document.getElementById('doc-content').style.display = 'block';
+
+        /* Restore header. */
+        document.getElementById('headerActions').style.display = '';
+        document.getElementById('headerActionsDoc').style.display = 'none';
+        document.getElementById('pageTitle').textContent = '<?php echo $lang->devws->myDocs;?>';
+
+        /* Activate doc menu. */
+        document.querySelectorAll('.menu-item[data-type]').forEach(function(mi) {
+            mi.classList.remove('active');
+            if(mi.getAttribute('data-type') === 'doc') mi.classList.add('active');
+        });
+    }
+
+    /* 项目详情页面控制（在主内容区显示，非抽屉） */
+    function openProjectView(projectID)
+    {
+        var iframe = document.getElementById('projectViewIframe');
+        iframe.src = '<?php echo helper::createLink('devws', 'project', "projectID=%s");?>'.replace('%s', projectID);
+
+        /* Hide all sections, show project view iframe. */
+        var sections = document.querySelectorAll('.content-section');
+        sections.forEach(function(s) { s.style.display = 'none'; });
+        document.getElementById('project-view-content').style.display = 'block';
+
+        /* Update header. */
+        document.getElementById('headerActions').style.display = 'none';
+        document.getElementById('headerActionsDoc').style.display = 'none';
+        document.getElementById('headerActionsProject').style.display = '';
+        document.getElementById('pageTitle').textContent = '项目详情';
+    }
+
+    function cancelProjectView()
+    {
+        var iframe = document.getElementById('projectViewIframe');
+        iframe.src = '';
+
+        /* Show project section. */
+        var sections = document.querySelectorAll('.content-section');
+        sections.forEach(function(s) { s.style.display = 'none'; });
+        document.getElementById('project-content').style.display = 'block';
+
+        /* Restore header. */
+        document.getElementById('headerActions').style.display = '';
+        document.getElementById('headerActionsDoc').style.display = 'none';
+        document.getElementById('headerActionsProject').style.display = 'none';
+        document.getElementById('pageTitle').textContent = '<?php echo $lang->devws->myProjects;?>';
+
+        /* Activate project menu. */
+        document.querySelectorAll('.menu-item[data-type]').forEach(function(mi) {
+            mi.classList.remove('active');
+            if(mi.getAttribute('data-type') === 'project') mi.classList.add('active');
+        });
+    }
+
+    /* 检测iframe导航变化，显示返回按钮 */
+    drawerIframe.addEventListener('load', function() {
+        try {
+            var iframeUrl = drawerIframe.contentWindow.location.href;
+            if(iframeUrl.indexOf('devws-task-') === -1 && iframeUrl.indexOf('devws/task') === -1) {
+                drawerBack.style.display = '';
+            } else {
+                drawerBack.style.display = 'none';
+            }
+        } catch(e) {
+            drawerBack.style.display = '';
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if(e.key === 'Escape' && drawerPanel.classList.contains('active')) closeDrawer();
     });
     </script>
 </body>

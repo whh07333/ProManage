@@ -1,0 +1,17 @@
+.git
+node_modules
+tmp
+*.log
+.DS_Store
+test-*.js
+test-*.php
+test-*.sh
+debug-*.js
+check_files.php
+phpinfo.php
+www.test.php
+doc
+docs
+*.md
+LICENSE.CN
+LICENSE.EN

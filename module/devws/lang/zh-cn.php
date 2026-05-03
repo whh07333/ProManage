@@ -20,4 +20,17 @@ $lang->devws->noProjects = '暂无参与的项目';
 $lang->devws->createDoc = '新建文档';
 
 $lang->devws->privileges = new stdclass();
-$lang->devws->privileges->index = '访问开发工作台';
+$lang->devws->privileges->index     = '访问开发工作台';
+$lang->devws->privileges->task      = '查看任务详情';
+$lang->devws->privileges->assignTo  = '指派任务';
+$lang->devws->privileges->create    = '创建任务';
+$lang->devws->privileges->createDoc = '创建文档';
+$lang->devws->privileges->project   = '查看项目详情';
+
+$lang->devws->pleaseSelect  = '请选择';
+$lang->devws->createDocFail = '创建文档失败';
+
+$lang->devws->detail = '详细信息';
+$lang->devws->taskNotFound = '任务不存在';
+$lang->devws->projectView = '项目详情';
+$lang->devws->projectNotFound = '项目不存在';

@@ -817,6 +817,7 @@ $lang->navGroup->cache         = 'admin';
 
 $lang->navGroup->aiapp = 'aiapp';
 
+$lang->navGroup->devws   = 'my';
 $lang->navGroup->index   = 'index';
 $lang->navGroup->misc    = 'misc';
 $lang->navGroup->upgrade = 'upgrade';
