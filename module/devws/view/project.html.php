@@ -47,6 +47,12 @@ if(!$progress && $project->status == 'closed') $progress = 100;
         <span style="font-size:12px;color:#666;background:#f0f5ff;padding:1px 8px;border-radius:3px;"><?php echo $aclName;?></span>
     </div>
 
+    <!-- ===== 标签导航 ===== -->
+    <div style="display:flex;gap:0;margin-bottom:12px;border-bottom:1px solid #e8e8e8;">
+        <a href="javascript:;" style="padding:10px 20px;font-size:14px;color:#1890ff;text-decoration:none;border-bottom:2px solid #1890ff;font-weight:500;"><?php echo $lang->devws->kanbanOverview;?></a>
+        <a href="javascript:;" onclick="parent.openKanbanView(<?php echo $project->id;?>)" style="padding:10px 20px;font-size:14px;color:#666;text-decoration:none;border-bottom:2px solid transparent;transition:all 0.2s;"><?php echo $lang->devws->kanban;?></a>
+    </div>
+
     <!-- ===== 统计卡片 ===== -->
     <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
         <div class="pd-stat-card" style="flex:1;min-width:120px;background:#fff;border:1px solid #e8e8e8;border-radius:6px;padding:14px 16px;text-align:center;">

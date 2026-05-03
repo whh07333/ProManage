@@ -40,3 +40,4 @@ $config->index->oldPages[] = 'devws-create';
 $config->index->oldPages[] = 'devws-createdoc';
 $config->index->oldPages[] = 'devws-project';
 $config->index->oldPages[] = 'devws-editproject';
+$config->index->oldPages[] = 'devws-kanban';

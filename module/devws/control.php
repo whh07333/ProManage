@@ -282,6 +282,62 @@ class devws extends control
     }
 
     /**
+     * Kanban board view for project tasks.
+     *
+     * @param  int    $projectID
+     * @access public
+     * @return void
+     */
+    public function kanban($projectID = 0)
+    {
+        $this->loadModel('devws');
+        $this->app->loadLang('task');
+        $this->app->loadLang('execution');
+        $this->app->loadLang('project');
+
+        $project = $this->devws->getProjectById($projectID);
+        if(!$project)
+        {
+            $this->view->project = null;
+            $this->view->title   = '项目不存在';
+            $this->display();
+            return;
+        }
+
+        /* Fetch project model data. */
+        $projectModel = $this->loadModel('project');
+        $project      = $projectModel->getById((int)$projectID);
+
+        /* Get all tasks in this project, grouped by kanban column status. */
+        $tasks       = $this->devws->getProjectKanbanTasks($projectID);
+
+        /* Default column definitions (fallback if kanban module config unavailable). */
+        $defaultColumns = array('wait' => 'wait', 'developing' => 'doing', 'developed' => 'done', 'pause' => 'pause', 'canceled' => 'cancel', 'closed' => 'closed');
+        $columnDefs  = !empty($this->config->kanban->taskColumnStatusList) ? (array)$this->config->kanban->taskColumnStatusList : $defaultColumns;
+        $users       = $this->loadModel('user')->getPairs('nodeleted|noclosed');
+
+        /* Build reverse map: task status -> column type. */
+        $statusToColumn = array();
+        foreach($columnDefs as $colType => $taskStatus) $statusToColumn[$taskStatus] = $colType;
+
+        /* Group tasks into columns. */
+        $groupedTasks = array();
+        foreach($columnDefs as $colType => $taskStatus) $groupedTasks[$colType] = array();
+        foreach($tasks as $task)
+        {
+            $col = isset($statusToColumn[$task->status]) ? $statusToColumn[$task->status] : 'wait';
+            $groupedTasks[$col][] = $task;
+        }
+
+        $this->view->title       = $project->name . ' - ' . $this->lang->devws->common;
+        $this->view->project     = $project;
+        $this->view->tasks       = $groupedTasks;
+        $this->view->users       = $users;
+        $this->view->columnDefs  = $columnDefs;
+        $this->display();
+    }
+
+    /**
      * Edit project page for main content area.
      *
      * @param  int    $projectID
@@ -375,5 +431,80 @@ class devws extends control
         $this->view->users      = $users;
         $this->view->title      = '指派任务 - ' . $task->name;
         $this->display();
+    }
+
+    /**
+     * AJAX: Update task status (via kanban drag-and-drop).
+     *
+     * @access public
+     * @return void
+     */
+    public function ajaxUpdateTaskStatus()
+    {
+        $taskID = (int)$this->post->taskID;
+        $status = $this->post->status;
+
+        if(!$taskID || !$status) return $this->send(array('result' => 'fail', 'message' => '参数错误'));
+
+        $this->loadModel('devws');
+        $this->loadModel('task');
+        $this->app->loadLang('action');
+
+        $oldTask = $this->task->getById($taskID);
+        if(!$oldTask) return $this->send(array('result' => 'fail', 'message' => '任务不存在'));
+
+        /* Validate status is a valid task status. */
+        $validStatuses = array_keys($this->lang->task->statusList);
+        if(!in_array($status, $validStatuses)) return $this->send(array('result' => 'fail', 'message' => '无效的状态'));
+
+        if($oldTask->status == $status) return $this->send(array('result' => 'success'));
+
+        /* Optimistic concurrency check: reject if another user modified since page load. */
+        $clientEdited = $this->post->lastEdited;
+        if($clientEdited && $oldTask->lastEditedDate && $clientEdited !== $oldTask->lastEditedDate)
+        {
+            return $this->send(array('result' => 'conflict', 'message' => '卡片已被其他人修改'));
+        }
+
+        $now = helper::now();
+        $account = $this->app->user->account;
+
+        /* Prepare update data. */
+        $taskData = new stdclass();
+        $taskData->status         = $status;
+        $taskData->lastEditedBy   = $account;
+        $taskData->lastEditedDate = $now;
+        if($status == 'doing' && empty($oldTask->realStarted)) $taskData->realStarted = $now;
+        if($status == 'done')
+        {
+            if(empty($oldTask->finishedBy)) $taskData->finishedBy   = $account;
+            if(empty($oldTask->finishedDate)) $taskData->finishedDate = $now;
+            $taskData->assignedTo = 'closed';
+            $taskData->assignedDate = $now;
+        }
+        if($status == 'cancel' && empty($oldTask->canceledBy))
+        {
+            $taskData->canceledBy   = $account;
+            $taskData->canceledDate = $now;
+        }
+
+        $this->dao->update(TABLE_TASK)->data($taskData)->where('id')->eq($taskID)->exec();
+        if(dao::isError()) return $this->send(array('result' => 'fail', 'message' => dao::getError()));
+
+        /* Refresh project stats. */
+        $this->loadModel('program')->refreshProjectStats($oldTask->project);
+
+        /* Update parent status. */
+        if($oldTask->parent > 0) $this->task->updateParentStatus($taskID);
+
+        /* Update linked story stage. */
+        if($oldTask->story) $this->loadModel('story')->setStage($oldTask->story);
+
+        /* Record action log. */
+        $changes = common::createChanges($oldTask, (object)array_merge((array)$oldTask, (array)$taskData));
+        $actionID = $this->loadModel('action')->create('task', $taskID, 'Edited', '', 'statuschanged');
+        if($actionID) $this->action->logHistory($actionID, $changes);
+
+        return $this->send(array('result' => 'success'));
     }
 }

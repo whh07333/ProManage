@@ -26,9 +26,14 @@ $lang->devws->privileges->assignTo  = '指派任务';
 $lang->devws->privileges->create    = '创建任务';
 $lang->devws->privileges->createDoc = '创建文档';
 $lang->devws->privileges->project   = '查看项目详情';
+$lang->devws->privileges->kanban    = '查看项目看板';
 
 $lang->devws->pleaseSelect  = '请选择';
 $lang->devws->createDocFail = '创建文档失败';
+
+$lang->devws->kanban         = '看板';
+$lang->devws->kanbanNoTasks  = '暂无任务';
+$lang->devws->kanbanOverview = '项目概览';
 
 $lang->devws->detail = '详细信息';
 $lang->devws->taskNotFound = '任务不存在';

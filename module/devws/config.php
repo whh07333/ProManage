@@ -6,6 +6,7 @@ $config->devws->group['create']    = '';
 $config->devws->group['createDoc'] = '';
 $config->devws->group['project']   = '';
 $config->devws->group['editProject']   = '';
+$config->devws->group['kanban']        = '';
 
 /* Reuse 'task' privilege for 'assignTo', 'create', 'createDoc' and 'project' so existing users don't need DB changes. */
 $config->devws->groupPrivs['assignto']     = 'task';
@@ -13,6 +14,7 @@ $config->devws->groupPrivs['create']       = 'task';
 $config->devws->groupPrivs['createdoc']    = 'task';
 $config->devws->groupPrivs['project']      = 'task';
 $config->devws->groupPrivs['editproject']  = 'task';
+$config->devws->groupPrivs['kanban']       = 'task';
 
 /* Editor settings for create method. */
 $config->devws->editor = new stdclass();

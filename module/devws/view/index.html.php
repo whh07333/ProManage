@@ -448,17 +448,68 @@
                 pageTitle.textContent = titles[type];
                 document.getElementById('headerActions').style.display = '';
                 document.getElementById('headerActionsDoc').style.display = 'none';
+                document.getElementById('headerActionsProject').style.display = 'none';
+
+                saveViewState(type);
             });
         });
 
-        /* 页面加载后切换到指定分区（如从创建文档返回） */
-        var savedSection = sessionStorage.getItem('devws_section');
-        if(savedSection) {
-            sessionStorage.removeItem('devws_section');
-            var targetMenuItem = document.querySelector('.menu-item[data-type="' + savedSection + '"]');
-            if(targetMenuItem) targetMenuItem.click();
+        /* Restore view after refresh: sessionStorage > location.hash. */
+        var savedView = sessionStorage.getItem('devws_view');
+        if(savedView) {
+            sessionStorage.removeItem('devws_view');
+            restoreView(savedView);
+        } else if(location.hash) {
+            restoreView(location.hash.slice(1));
         }
     });
+
+    window.addEventListener('hashchange', function() {
+        restoreView(location.hash.slice(1));
+    });
+
+    /* Persist & restore view state across refresh (guarded against re-entry). */
+    var _routing = false;
+
+    function saveViewState(state)
+    {
+        if(!state) return;
+        /* Always persist to sessionStorage (survives refresh). */
+        sessionStorage.setItem('devws_view', state);
+        /* Update hash for browser history, guarded against re-entry loop. */
+        if(!_routing) location.hash = state;
+    }
+
+    function restoreView(state)
+    {
+        if(!state || _routing) return;
+
+        /* Skip restore if already on this view (avoids iframe reload from hashchange loop). */
+        var currentView = sessionStorage.getItem('devws_view');
+        if(currentView === state) return;
+
+        _routing = true;
+
+        var match = state.match(/^(project|kanban)\/(\d+)$/);
+        if(match) {
+            var viewType = match[1];
+            var projectID = parseInt(match[2]);
+            if(viewType === 'kanban') {
+                openKanbanView(projectID);
+            } else {
+                openProjectView(projectID);
+            }
+            _routing = false;
+            return;
+        }
+
+        if(['work', 'doc', 'project'].indexOf(state) !== -1) {
+            var targetMenuItem = document.querySelector('.menu-item[data-type="' + state + '"]');
+            if(targetMenuItem) targetMenuItem.click();
+        }
+
+        _routing = false;
+    }
 
     /* 抽屉面板控制 */
     var drawerOverlay = document.getElementById('drawerOverlay');
@@ -531,6 +582,8 @@
         document.querySelectorAll('.menu-item[data-type]').forEach(function(mi) {
             mi.classList.remove('active');
         });
+
+        saveViewState('createdoc');
     }
 
     function cancelCreateDoc()
@@ -553,6 +606,8 @@
             mi.classList.remove('active');
             if(mi.getAttribute('data-type') === 'doc') mi.classList.add('active');
         });
+
+        saveViewState('doc');
     }
 
     /* 项目详情页面控制（在主内容区显示，非抽屉） */
@@ -571,6 +626,8 @@
         document.getElementById('headerActionsDoc').style.display = 'none';
         document.getElementById('headerActionsProject').style.display = '';
         document.getElementById('pageTitle').textContent = '项目详情';
+
+        saveViewState('project/' + projectID);
     }
 
     function cancelProjectView()
@@ -594,6 +651,26 @@
             mi.classList.remove('active');
             if(mi.getAttribute('data-type') === 'project') mi.classList.add('active');
         });
+
+        saveViewState('project');
+    }
+
+    /* 看板视图（与项目详情共用 iframe） */
+    function openKanbanView(projectID)
+    {
+        var iframe = document.getElementById('projectViewIframe');
+        iframe.src = '<?php echo helper::createLink('devws', 'kanban', "projectID=%s");?>'.replace('%s', projectID);
+
+        var sections = document.querySelectorAll('.content-section');
+        sections.forEach(function(s) { s.style.display = 'none'; });
+        document.getElementById('project-view-content').style.display = 'block';
+
+        document.getElementById('headerActions').style.display = 'none';
+        document.getElementById('headerActionsDoc').style.display = 'none';
+        document.getElementById('headerActionsProject').style.display = '';
+        document.getElementById('pageTitle').textContent = '看板';
+
+        saveViewState('kanban/' + projectID);
     }
 
     /* 检测iframe导航变化，显示返回按钮 */

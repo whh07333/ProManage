@@ -264,4 +264,24 @@ class devwsModel extends model
 
         return $project;
     }
+
+    /**
+     * Get all tasks across executions for a project (kanban data).
+     *
+     * @param  int    $projectID
+     * @access public
+     * @return array
+     */
+    public function getProjectKanbanTasks($projectID)
+    {
+        return $this->dao->select('t1.*, t2.name as executionName, t3.realname as assignedToRealName')
+            ->from(TABLE_TASK)->alias('t1')
+            ->leftJoin(TABLE_EXECUTION)->alias('t2')->on('t1.execution = t2.id')
+            ->leftJoin(TABLE_USER)->alias('t3')->on('t1.assignedTo = t3.account')
+            ->where('t2.project')->eq((int)$projectID)
+            ->andWhere('t1.deleted')->eq(0)
+            ->andWhere('t1.isParent')->ne(1)
+            ->orderBy('t1.id desc')
+            ->fetchAll();
+    }
 }
